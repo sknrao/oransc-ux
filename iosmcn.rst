@@ -25,9 +25,17 @@ The work is about adding SMO solution for IOS-MCN based on open-sources. The bel
 
 The first release of IOS-MCN mostly cover the OAM component of the SMO.
 
+.. image:: images/smo.png
+   :scale: 10%
+
+
+The OAM Architecture
+--------------------
 
 The overall OAM architecture of IOS-MCN is shown below.
 
+.. image:: images/oam.jpg
+   :scale: 25%
 
 Experience
 ----------
