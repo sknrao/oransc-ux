@@ -97,19 +97,21 @@ The VES-Collector from smo-ves is not actively maintained. Hence, we decided to 
 Design Decisions
 ################
 
-1. Do we even need VES collector? Without the VES collector, the burden of mapping message to topics has to be done borne by somebody else - probably the O1-adapter. Hence, we do need VES collector.
+1. Do we even need VES collector? Without the VES collector, the burden of mapping message (stream-id) to kafka topics has to be borne by somebody else - probably the O1-adapter. If this, moving the burden to somebody else, is not possible, then we do need VES collector.
 2. Do we need validation by VES collector? This we MAY not need and just a component that maps messages to topics should be enough. We will be experimenting by creating a simple HTTP server-cum-client, which receives messages from RAN components, parses the header, and calls Kafka-bridge's APIs.
 
 Challenges:
 ###########
 
-1. Upgrading to newer version is a challenge - it doesn't work. The newer version of ves-collect (1.12.5) does not work. The most recent version we can use is 1.12.4.
+1. Upgrading to newer version (1.12.5) is a challenge - it doesn't work. The most recent version we can use is 1.12.4.
+2. Understanding how ves-collector maps the message to the topic is not clear from the configurations. We will have to look at multiple-files to undestand. `ves-dmaap-config.json <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/ves-dmaap-config.json>`_ maps topics to a key(streamid). This key is further mapped to message type in `collector.properties <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/collector.properties>`_ file. Here the message type is read from either domain-name or standard-defined name.
 
 Tips:
 #####
 
+
 1. DMAAP_HOST
-2. 
+2. You may have to modify `externalrepo.json <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/externalRepo.json>`_ to ensure you have Rel-18. Delete lines 6-10
 
 
 Message Router
@@ -121,7 +123,7 @@ Alternatives:
 1. DMAAP-MR (not actively developed)
 2. Kafka Bridge.
 
-As we could not complete the testing of kafka bridge with VES-Collector, at least for the first release, we are sticking with the deprecated DMAAP-MR. Even O-RAN-SC OAM is using the dmaap-mr as the messge router. We will eventually migrate to kafka-bridge.
+As we could not complete the testing of kafka bridge with VES-Collector, at least for the first release, we are sticking with the deprecated DMAAP-MR. Even O-RAN-SC OAM is using the dmaap-mr as the messge router. We will eventually migrate to kafka-bridge. We will update here 
 
 
 Design Decisions
@@ -132,12 +134,12 @@ None
 Challenges:
 ###########
 
-1. 
+1. DMAAP-MR is deprecated. Even building locally fails. We just have to use the published containers.
 
 Tips:
 #####
 
-1. 
+1. Stick to kafka-bridge from the beginning.
 
 
 Handling File-Ready
@@ -147,6 +149,8 @@ Handling File-Ready
 Alternatives:
 #############
 
+1. O-RAN-SC NON-RT-RIC's ranpm project.
+2. smo-ves project 
 
 Design Decisions
 ################
