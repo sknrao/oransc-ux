@@ -4,7 +4,7 @@
 IOS-MCN User-Experience
 =======================
 
-This document describes the experience of IOSMCN project in using O-RAN-SC solutions.
+This document describes the experience of IOSMCN project in using O-RAN-SC solutions. This document refers to the work done for the first (Agartala) release of IOSMCN.
 
 About IOSMCN
 ------------
@@ -37,6 +37,8 @@ The overall OAM architecture of IOS-MCN is shown below.
 .. image:: images/oam.jpg
    :scale: 10%
 
+The OAM component interacts with gNB based on OAI and the corresponding O1-adapter, over the O1 interface.
+
 Experience
 ----------
 We will describe the experience - in terms of lessons learnt, challenges faced, choosing right solution among the available alternatives, etc, - for each of the individual components one by one.
@@ -48,7 +50,7 @@ The project initially explored the light-weight configuration solution for RAN. 
 Alternatives:
 #############
 1. ONAP's SDNC and SDNC-Web - part of O-RAN-SC's OAM.
-2. ONOS-Config 
+2. ONOS-Config
 3. OpenMPlane (For RU configuration).
 
 ONOS-Config is based on gNMI, and lacked Netconf Support. Converting from gNMI to Netconf adds additional work. Hence we decided to use SDNC/R (ODL) from o-ran-sc/oam.
@@ -85,7 +87,7 @@ Tips:
 VES-Collector
 ~~~~~~~~~~~~~
 
-VES collector is a needless critical components. 
+VES collector is one of the critical components of OAM. However, there is 
 
 Alternatives:
 #############
@@ -142,24 +144,57 @@ Tips:
 1. Stick to kafka-bridge from the beginning.
 
 
-Handling File-Ready
-~~~~~~~~~~~~~~~~~~~
+Performance Management: Handling File-Ready
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+gNB puts all the performance metrics for a certain time-window in a file, and sends file-ready event O1 interface. The OAM when it receives this event, it pulls the file from gNB, and how it handles that file can vary across different solutions. For example, in O-RAN-SC Non-RT RIC ranpm project, the file is first put into minio-db, next converted to json, and finally added to influxDB as individual metrics.
 
 Alternatives:
 #############
 
 1. O-RAN-SC NON-RT-RIC's ranpm project.
-2. smo-ves project 
+2. Customize the smo-ves project to handle file-ready event.
+
+We tried both the options, including developing a custom solution based on smo-ves, and finally opted to use it ranpm.
 
 Design Decisions
 ################
 
+1. Monolith vs microservices: File-ready handling based on RANPM solution requires deploying 8 different components. We developed a single component, based on O-RAN-SC smo-ves to pull the file, convert it to json and add metrics to influxDB. After detailed evaluation, prioritizing flexibility and future use-cases, we chose to use ranpm's microservices architecture.
 
 Challenges:
 ###########
 
-1. Upgrading to newer version is a challenge - it doesn't work.
+1. Existing ranpm solution expects the file-ready message in a `format <https://docs.onap.org/projects/onap-vnfrqts-requirements/en/latest/Chapter8/ves_7_2/ves_event_listener_7_2.html#notification-domain-datatypes>`_, which is quite different from the way OAI (3GPP_Performance_Assurance) sends. We had to modify significantly the existing datafile-collector to support the newer version.
+2. Adding PM-Producer jobs for Logger's consumption: Currently, it requires to run a certain script, in order for PM-Producer to send metrics, which can be consumed by the PM-Logger. In this script, we canno create a 'generic' filter (refer to JSON code below). We need to put specific (matching the deployment) values in one or more fields 
+..
+.. code-block:: JSON
+
+    {
+       "info_type_id": "PmData",
+       "job_owner": "console",
+       "job_definition": {
+          "filter": {
+             "sourceNames": [],
+             "measObjInstIds": [],
+             "measTypeSpecs": [
+                {
+                   "measuredObjClass":"",
+                   "measTypes": [
+                      "pmCounterNumber102"
+                   ]
+                }
+             ],
+             "measuredEntityDns": []
+          },
+          "deliveryInfo": {
+             "topic": "pmreports",
+             "bootStrapServers": "kafka-1:9097"
+          }
+       }
+    }
+
+
 
 Tips:
 #####
