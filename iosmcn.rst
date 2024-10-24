@@ -45,7 +45,7 @@ We will describe the experience - in terms of lessons learnt, challenges faced, 
 
 SDN-Controller based configuration of RAN
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The project initially explored the light-weight configuration solution for RAN. Developing a custom Netconf client application is not a challenge, However, features such as additional features such as message-handling, topology management, and inventory, which are already part of an SDN controller, makes a strong case for SDN-Controller based solution. In addition, all available open-source RAN configuration solutions are SDN-based (we couldn't find what solution srsRAN is using). 
+The project initially explored the light-weight configuration solution for RAN. Developing a custom Netconf client application is not a challenge, However, features such as additional features such as message-handling, topology management, and inventory, which are already part of an SDN controller, makes a strong case for SDN-Controller based solution. In addition, all available open-source RAN configuration solutions are SDN-based (we couldn't find what solution srsRAN is using).
 
 Alternatives:
 #############
@@ -87,7 +87,7 @@ Tips:
 VES-Collector
 ~~~~~~~~~~~~~
 
-VES collector is one of the critical components of OAM. However, there is 
+VES collector is one of the critical components of OAM. As it performs validation of the messages/events against the schema, and in a particular way, it becomes very important to understand the integration with this component.
 
 Alternatives:
 #############
@@ -107,13 +107,15 @@ Challenges:
 
 1. Upgrading to newer version (1.12.5) is a challenge - it doesn't work. The most recent version we can use is 1.12.4.
 2. Understanding how ves-collector maps the message to the topic is not clear from the configurations. We will have to look at multiple-files to undestand. `ves-dmaap-config.json <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/ves-dmaap-config.json>`_ maps topics to a key(streamid). This key is further mapped to message type in `collector.properties <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/collector.properties>`_ file. Here the message type is read from either domain-name or standard-defined name.
+3. It doesn't work with kafka-bridge directly, we are yet to figure out what changes should be made to remove the dependency with DMAAP-MR. Thought DMAAP-MR is been deprecated, the ves-collector still has some strange dependencies on it.
 
 Tips:
 #####
 
 
-1. DMAAP_HOST
-2. You may have to modify `externalrepo.json <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/externalRepo.json>`_ to ensure you have Rel-18. Delete lines 6-10
+1. Ensure you have right configuration of DMAAP_HOST. The same should be use in `ves-dmaap-config.json <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/ves-dmaap-config.json>`_ under topic_url variable
+2. You may have to modify `externalrepo.json <https://github.com/o-ran-sc/oam/blob/master/solution/smo/oam/ves-collector/externalRepo.json>`_ to ensure you have Rel-18. Delete lines 6-10.
+3. If you want to test your ves-collector with the accompanying `client code <https://github.com/o-ran-sc/oam/blob/master/code/client-scripts-ves-v7/>`_ then you will have to unde the json templates present in the client code.
 
 
 Message Router
@@ -141,7 +143,7 @@ Challenges:
 Tips:
 #####
 
-1. Stick to kafka-bridge from the beginning.
+1. Try with kafka-bridge from the beginning.
 
 
 Performance Management: Handling File-Ready
@@ -166,7 +168,9 @@ Challenges:
 ###########
 
 1. Existing ranpm solution expects the file-ready message in a `format <https://docs.onap.org/projects/onap-vnfrqts-requirements/en/latest/Chapter8/ves_7_2/ves_event_listener_7_2.html#notification-domain-datatypes>`_, which is quite different from the way OAI (3GPP_Performance_Assurance) sends. We had to modify significantly the existing datafile-collector to support the newer version.
-2. Adding PM-Producer jobs for Logger's consumption: Currently, it requires to run a certain script, in order for PM-Producer to send metrics, which can be consumed by the PM-Logger. In this script, we canno create a 'generic' filter (refer to JSON code below). We need to put specific (matching the deployment) values in one or more fields 
+
+2. Adding PM-Producer jobs for Logger's consumption: Currently, it requires to run a certain script, in order for PM-Producer to send metrics, which can be consumed by the PM-Logger. In this script, we canno create a 'generic' filter (refer to JSON code below). We need to put specific (matching the deployment) values in one or more fields
+
 ..
 .. code-block:: JSON
 
@@ -175,14 +179,12 @@ Challenges:
        "job_owner": "console",
        "job_definition": {
           "filter": {
-             "sourceNames": [],
+             "sourceNames": ["gnB Eurecom"],
              "measObjInstIds": [],
              "measTypeSpecs": [
                 {
                    "measuredObjClass":"",
-                   "measTypes": [
-                      "pmCounterNumber102"
-                   ]
+                   "measTypes": []
                 }
              ],
              "measuredEntityDns": []
@@ -194,37 +196,27 @@ Challenges:
        }
     }
 
+3. Bloating of the file-converter application: The pm-file-converter, a golang application, which coverts xml-to-json bloats over a period of time. If it is left running for a week, it bloats so big that it ends up crashing. This issue has been notified to the Non-RT-RIC team and they are looking into this.
 
 
 Tips:
 #####
 
-
-Component
-~~~~~~~~~
-
-
-Alternatives:
-#############
+1. Track the minio-databases if you face any issue.
+2. Document and keep track of the topics that are being used. Especially the topics used by pm-producer - for example, json-file-ready-kpadp does not get used.
 
 
-Design Decisions
-################
+Demonstration Details
+~~~~~~~~~~~~~~~~~~~~~
 
-
-Challenges:
-###########
-
-1. Upgrading to newer version is a challenge - it doesn't work.
-
-Tips:
-#####
-
-
+1. `Introduction Slides <https://docs.google.com/presentation/d/1l5Y1VQdiN6-1u-UPiN6EQMY3I8UdCrC2/edit>`_
+2. `Demo-Video <https://drive.google.com/file/d/1mp59JT_KOnv-NRmj5CbgfTBzDsPgRnjk/view?usp=drive_link>`_
 
 User Contact for IOS-MCN
-************************
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 Name: Sridhar K. N. Rao
+
 email: sridharkn@u.nus.edu
 
 
